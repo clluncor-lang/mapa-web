@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mapa Actividades</title>
+
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="filtros">
+  <select id="mes">
+    <option value="Todos">Todos</option>
+    <option value="enero">enero</option>
+    <option value="febrero">febrero</option>
+    <option value="marzo">marzo</option>
+    <option value="abril">abril</option>
+    <option value="mayo">mayo</option>
+    <option value="junio">junio</option>
+    <option value="julio">julio</option>
+    <option value="agosto">agosto</option>
+    <option value="septiembre">septiembre</option>
+    <option value="octubre">octubre</option>
+    <option value="noviembre">noviembre</option>
+    <option value="diciembre">diciembre</option>
+  </select>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+<script src="script.js"></script>
+
+</body>
+</html>
