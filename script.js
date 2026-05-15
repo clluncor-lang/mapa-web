@@ -4,19 +4,20 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
-var urlCSV = "https://docs.google.com/spreadsheets/d/1enENlMc8MPCTFqNj_7ArIuHdWMeBn8np4aNMy4knyZw/export?format=csv&gid=530107837";
+var urlCSV =
+"https://docs.google.com/spreadsheets/d/1enENlMc8MPCTFqNj_7ArIuHdWMeBn8np4aNMy4knyZw/export?format=csv&gid=530107837";
 
-var markers = [];
+var capaMarkers = L.layerGroup().addTo(map);
 
 function convertirLinkDrive(url) {
 
-    if(!url) return "";
+    if (!url) return "";
 
     var match = url.match(/\/d\/(.*?)\//);
 
-    if(match && match[1]) {
+    if (match && match[1]) {
 
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        return "https://drive.google.com/uc?export=view&id=" + match[1];
 
     }
 
@@ -25,11 +26,7 @@ function convertirLinkDrive(url) {
 
 function cargarDatos(mesSeleccionado = "Todos") {
 
-    markers.forEach(marker => {
-        map.removeLayer(marker);
-    });
-
-    markers = [];
+    capaMarkers.clearLayers();
 
     Papa.parse(urlCSV, {
 
@@ -38,60 +35,107 @@ function cargarDatos(mesSeleccionado = "Todos") {
 
         complete: function(results) {
 
+            console.log(results.data);
+
             results.data.forEach(function(fila) {
 
-                var lat = fila["latitud "];
-                var lon = fila["longitud"];
+                var lat =
+                    fila["latitud "] ||
+                    fila["latitud"] ||
+                    "";
 
-                if(lat && lon) {
+                var lon =
+                    fila["longitud"] ||
+                    fila["longitud "] ||
+                    "";
 
-                    lat = parseFloat(lat.replace(",", "."));
-                    lon = parseFloat(lon.replace(",", "."));
+                lat = lat.toString().replace(",", ".");
+                lon = lon.toString().replace(",", ".");
 
-                    if(!isNaN(lat) && !isNaN(lon)) {
+                lat = parseFloat(lat);
+                lon = parseFloat(lon);
 
-                        var mes = (fila["Mes"] || "")
-                            .trim()
-                            .toLowerCase();
+                if (!isNaN(lat) && !isNaN(lon)) {
 
-                        if(
-                            mesSeleccionado.toLowerCase() === "todos" ||
-                            mes === mesSeleccionado.trim().toLowerCase()
-                        ) {
+                    var mes =
+                        (fila["Mes"] || "")
+                        .trim()
+                        .toLowerCase();
 
-                            var imagen = convertirLinkDrive(fila["Foto"]);
+                    var filtro =
+                        mesSeleccionado
+                        .trim()
+                        .toLowerCase();
 
-                            var marker = L.marker([lat, lon]).addTo(map);
+                    if (
+                        filtro === "todos" ||
+                        mes === filtro
+                    ) {
 
-                            markers.push(marker);
+                        var foto =
+                            fila["Foto"] ||
+                            fila["Imagen"] ||
+                            "";
 
-                            marker.bindPopup(`
-                                <div style="width:250px">
+                        foto = convertirLinkDrive(foto);
 
-                                <h3>${fila["Actividad"] || ""}</h3>
+                        var popup = `
 
-                                <b>Mes:</b> ${fila["Mes"] || ""}<br>
+                        <div style="width:250px">
 
-                                <b>Lugar:</b> ${fila["lugar"] || ""}<br><br>
+                        <h2>
+                        ${fila["actividad_realizada"] || ""}
+                        </h2>
 
-                                <b>Comentario:</b><br>
-                                ${fila["comentario "] || ""}<br><br>
+                        <b>Actividad:</b><br>
+                        ${fila["Actividad"] || ""}
 
-                                <b>Responsable:</b>
-                                ${fila["Responsable"] || ""}<br><br>
+                        <br><br>
 
-                                ${
-                                    imagen
-                                    ?
-                                    `<img src="${imagen}" width="100%">`
-                                    :
-                                    ""
-                                }
+                        <b>Mes:</b><br>
+                        ${fila["Mes"] || ""}
 
-                                </div>
-                            `);
+                        <br><br>
 
+                        <b>Lugar:</b><br>
+                        ${fila["lugar"] || ""}
+
+                        <br><br>
+
+                        <b>Comentario:</b><br>
+                        ${
+                            fila["comentario "] ||
+                            fila["comentario"] ||
+                            ""
                         }
+
+                        <br><br>
+
+                        <b>Responsable:</b><br>
+                        ${fila["Responsable"] || ""}
+
+                        <br><br>
+                        `;
+
+                        if (foto !== "") {
+
+                            popup += `
+                            <img
+                            src="${foto}"
+                            style="
+                            width:100%;
+                            border-radius:10px;
+                            ">
+                            `;
+                        }
+
+                        popup += `</div>`;
+
+                        var marker = L.marker([lat, lon]);
+
+                        marker.bindPopup(popup);
+
+                        capaMarkers.addLayer(marker);
 
                     }
 
@@ -107,7 +151,9 @@ function cargarDatos(mesSeleccionado = "Todos") {
 
 cargarDatos();
 
-document.getElementById("mes").addEventListener("change", function() {
+document
+.getElementById("mes")
+.addEventListener("change", function() {
 
     cargarDatos(this.value);
 
