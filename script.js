@@ -6,44 +6,109 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 var urlCSV = "https://docs.google.com/spreadsheets/d/1enENlMc8MPCTFqNj_7ArIuHdWMeBn8np4aNMy4knyZw/export?format=csv&gid=530107837";
 
-Papa.parse(urlCSV, {
+var markers = [];
 
-    download: true,
-    header: true,
+function convertirLinkDrive(url) {
 
-    complete: function(results) {
+    if(!url) return "";
 
-        console.log(results.data);
+    var match = url.match(/\/d\/(.*?)\//);
 
-        results.data.forEach(function(fila) {
+    if(match && match[1]) {
 
-            console.log(fila);
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
 
-            var lat = fila["latitud "];
-            var lon = fila["longitud"];
+    }
 
-            console.log("LAT:", lat);
-            console.log("LON:", lon);
+    return url;
+}
 
-            if(lat && lon) {
+function cargarDatos(mesSeleccionado = "Todos") {
 
-                lat = parseFloat(lat.replace(",", "."));
-                lon = parseFloat(lon.replace(",", "."));
+    markers.forEach(marker => {
+        map.removeLayer(marker);
+    });
 
-                console.log(lat, lon);
+    markers = [];
 
-                if(!isNaN(lat) && !isNaN(lon)) {
+    Papa.parse(urlCSV, {
 
-                    L.marker([lat, lon])
-                        .addTo(map)
-                        .bindPopup(fila["Actividad"]);
+        download: true,
+        header: true,
+
+        complete: function(results) {
+
+            results.data.forEach(function(fila) {
+
+                var lat = fila["latitud "];
+                var lon = fila["longitud"];
+
+                if(lat && lon) {
+
+                    lat = parseFloat(lat.replace(",", "."));
+                    lon = parseFloat(lon.replace(",", "."));
+
+                    if(!isNaN(lat) && !isNaN(lon)) {
+
+                        var mes = (fila["Mes"] || "")
+                            .trim()
+                            .toLowerCase();
+
+                        if(
+                            mesSeleccionado.toLowerCase() === "todos" ||
+                            mes === mesSeleccionado.trim().toLowerCase()
+                        ) {
+
+                            var imagen = convertirLinkDrive(fila["Foto"]);
+
+                            var marker = L.marker([lat, lon]).addTo(map);
+
+                            markers.push(marker);
+
+                            marker.bindPopup(`
+                                <div style="width:250px">
+
+                                <h3>${fila["Actividad"] || ""}</h3>
+
+                                <b>Mes:</b> ${fila["Mes"] || ""}<br>
+
+                                <b>Lugar:</b> ${fila["lugar"] || ""}<br><br>
+
+                                <b>Comentario:</b><br>
+                                ${fila["comentario "] || ""}<br><br>
+
+                                <b>Responsable:</b>
+                                ${fila["Responsable"] || ""}<br><br>
+
+                                ${
+                                    imagen
+                                    ?
+                                    `<img src="${imagen}" width="100%">`
+                                    :
+                                    ""
+                                }
+
+                                </div>
+                            `);
+
+                        }
+
+                    }
 
                 }
 
-            }
+            });
 
-        });
+        }
 
-    }
+    });
+
+}
+
+cargarDatos();
+
+document.getElementById("mes").addEventListener("change", function() {
+
+    cargarDatos(this.value);
 
 });
